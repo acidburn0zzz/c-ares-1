@@ -13,7 +13,7 @@ addons:
 
     # GitHub project metadata
     project:
-      name: c-ares/c-ares
+      name: c-ares
       version: 1.14.0
       description: C library for asynchronous DNS requests
 
