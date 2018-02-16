@@ -1,113 +1,31 @@
 language: c++
 dist: trusty
 sudo: false
+
+env:
+  global:
+    # COVERITY_SCAN_TOKEN
+    secure: "ezi0VMBWRYZ0wAphLE/gDSMtn1mKekFEYsWg/Hb429DpAUZaTAvIoRXtDTcn49bjTXkmPgnrVAV8vDi5unX0q8mdAcywKedN3mBJOmr7/oxpxeD4LzssaD3a71sPrbTSn9p33nsaKjVjN3Y+74WZS36TxuCHH4xqwMy8k5FjbGI="
+
 addons:
-    apt:
-        sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-5.0
-        packages:
-            - cmake3
-            - lcov
-            - clang-5.0
-            - clang-tools-5.0
-            - valgrind
-matrix:
-    include:
-        - os: linux
-          compiler: gcc
-          env: BUILD_TYPE=normal
-        - os: linux
-          compiler: clang
-          env: BUILD_TYPE=normal
-        - os: linux
-          compiler: gcc
-          env: BUILD_TYPE=cmake
-        - os: linux
-          compiler: clang
-          env: BUILD_TYPE=cmake
-        - os: linux
-          compiler: gcc
-          env: BUILD_TYPE=coverage
-        - os: linux
-          compiler: clang
-          env: BUILD_TYPE=ubsan
-        - os: linux
-          compiler: clang
-          env: BUILD_TYPE=asan
-          sudo: true  # ASAN requires ptrace which is disabled in containers (https://github.com/travis-ci/travis-ci/issues/9033)
-        - os: linux
-          compiler: clang
-          env: BUILD_TYPE=lsan
-          sudo: true  # LSAN requires ptrace which is disabled in containers (https://github.com/travis-ci/travis-ci/issues/9033)
-        - os: linux
-          compiler: clang
-          env: BUILD_TYPE=analyse
-        - os: linux
-          compiler: gcc
-          env: BUILD_TYPE=valgrind
-        - os: osx
-          compiler: gcc
-          env: BUILD_TYPE=normal
-        - os: osx
-          compiler: clang
-          env: BUILD_TYPE=normal
-        - os: osx
-          compiler: clang
-          env: BUILD_TYPE=cmake
-        - os: osx
-          compiler: clang
-          language: objective-c
-          env: BUILD_TYPE=ios
-install:
-    - if [ "$TRAVIS_OS_NAME" != "osx" ]; then pip install --user cpp-coveralls > /dev/null; fi
-    - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew reinstall libtool > /dev/null; fi
-before_script:
-    - |
-        if [ "$BUILD_TYPE" = "coverage" ]; then
-             export CONFIG_OPTS="--enable-debug --disable-shared --enable-code-coverage"
-        fi
-    - |
-         if [ "$BUILD_TYPE" = "asan" ]; then
-             export CONFIG_OPTS=--enable-debug
-             export CFLAGS=-fsanitize=address
-             export CXXFLAGS=-fsanitize=address
-             export LDFLAGS=-fsanitize=address
-         fi
-    - |
-         if [ "$BUILD_TYPE" = "lsan" ]; then
-             export CONFIG_OPTS=--enable-debug
-             export CFLAGS=-fsanitize=leak
-             export CXXFLAGS=-fsanitize=leak
-             export LDFLAGS=-fsanitize=leak
-         fi
-    - |
-         if [ "$BUILD_TYPE" = "ubsan" ]; then
-             export CFLAGS="-fsanitize=undefined -fno-sanitize-recover"
-             export LDFLAGS="-fsanitize=undefined"
-         fi
-    - |
-         if [ "$BUILD_TYPE" = "analyse" ]; then
-             export SCAN_WRAP="scan-build-5.0 --status-bugs"
-             export CONFIG_OPTS="--enable-debug"
-             export CXX="clang++-5.0"
-             export CC="clang-5.0"
-         fi
-    - |
-         if [ "$BUILD_TYPE" = "valgrind" ]; then
-             export TEST_WRAP='libtool --mode=execute valgrind --leak-check=full'
-             # Skip container tests as valgrind doesn't cope with clone()
-             export TEST_FILTER="--gtest_filter=-*Container*"
-         fi
-    - |
-         if [ "$BUILD_TYPE" = "ios" ]; then
-             export CONFIG_OPTS=--host=arm-apple-darwin10
-             export DEVPATH=`xcode-select -print-path`/Platforms/iPhoneOS.platform/Developer
-             export IOSFLAGS="-isysroot $DEVPATH/SDKs/iPhoneOS.sdk -arch armv7 -miphoneos-version-min=8.0.0"
-             export CFLAGS=$IOSFLAGS
-             export CXXFLAGS=$IOSFLAGS
-             export LDFLAGS=$IOSFLAGS
-         fi
-script:
-    - ./travis/build.sh && ./travis/test.sh
-    - if [ "$BUILD_TYPE" = "normal" ]; then ./travis/distcheck.sh && ./travis/covupload.sh; fi
+  coverity_scan:
+
+    # GitHub project metadata
+    project:
+      name: c-ares/c-ares
+      version: 1.14.0
+      description: C library for asynchronous DNS requests
+
+    # Where email notification of build analysis results will be sent
+    #notification_email: scan_notifications@example.com
+
+    # Commands to prepare for build_command
+    build_command_prepend: ./buildconf && ./configure
+
+    # The command that will be added as an argument to "cov-build" to compile your project for analysis,
+    build_command: make
+
+    # Pattern to match selecting branches that will run analysis. We recommend leaving this set to 'coverity_scan'.
+    # Take care in resource usage, and consider the build frequency allowances per
+    #   https://scan.coverity.com/faq#frequency
+    branch_pattern: coverity_scan
