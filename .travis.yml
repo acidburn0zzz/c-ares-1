@@ -1,6 +1,7 @@
 language: c++
 dist: trusty
 sudo: false
+compiler: gcc
 
 env:
   global:
@@ -29,3 +30,9 @@ addons:
     # Take care in resource usage, and consider the build frequency allowances per
     #   https://scan.coverity.com/faq#frequency
     branch_pattern: coverity_scan
+
+before_script: ./buildconf
+script:
+  - if [[ "${TRAVIS_BRANCH}" == "coverity_scan" ]]; then exit 0; fi
+  - ./configure
+  - make
